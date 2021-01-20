@@ -1,0 +1,7 @@
+# Dont commit this folder
+ventilator
+
+# VS Code folders
+.vscode
+__pycache__
+*.pyc
