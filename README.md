@@ -21,16 +21,16 @@ pipenv shell
 python main.py
 ```
 
-## Separately
+## Separately (CAUTION: First edit LoadBalancer/controller.py file)
 
 Run controller
 
 ```sh
-python src/controller.py
+python LoadBalancer/controller.py
 ```
 
 Run worker
 
 ```sh
-python src/worker.py
+python LoadBalancer/worker.py
 ```
