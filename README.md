@@ -6,7 +6,13 @@ We will one Client generating tasks connected to a Broker Proxy which distribute
 
 The Proxy must distribute the tasks evenly between workers and in case of worker failure its remaining tasks will be sent to other workers.
 
-# Running instructions
+# Install
+
+```sh
+pipenv install git+https://github.com/mattborghi/load-balancer-zmq/#egg=LoadBalancer
+```
+
+# Local development instructions
 
 Set working environment
 
