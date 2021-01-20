@@ -1,9 +1,12 @@
 from multiprocessing import Event
+from src.log_info import Logger
 import zmq
 import json
 import time
 import uuid
 
+
+MAX_WORK_PER_SESSION = 50
 
 class Controller(object):
     def __init__(self, event):
@@ -15,10 +18,14 @@ class Controller(object):
         # We'll keep our workers here, this will be keyed on the worker id,
         # and the value will be a dict of Job instances keyed on job id.
         self.workers = {}
+        # TODO: Include self.workers info in an Logger object
+        self.statistics = Logger()
+
         # We won't assign more than 50 jobs to a worker at a time; this ensures
         # reasonable memory usage, and less shuffling when a worker dies.
         self.max_jobs_per_worker = 2
         self._work_to_requeue = {}
+        # Use the same socket to receive the results as we are using a ROUTER socket
         self.socket_result = self.socket
 
         self._run()
@@ -47,7 +54,7 @@ class Controller(object):
     def work_iterator(self):
         # iter() makes our xrange object into an iterator so we can use
         # next() on it.
-        iterator = iter(range(0, 10000))
+        iterator = iter(range(0, MAX_WORK_PER_SESSION))
         while True:
             # Return requeued work first. We could simplify this method by
             # returning all new work then all requeued work, but this way we
@@ -64,14 +71,25 @@ class Controller(object):
                 try:
                     yield Job({"number": next(iterator)})
                 except StopIteration:
-                    pass
-                #     yield None
+                    # print("Stopped Iteration")
+                    yield None
 
     def _process_results(self, worker_id, job_id, result):
         print("Worker ID %s finished job %s with result %s" %
               (worker_id, job_id, result))
-        print("Remaining work")
-        print(self.workers)
+        self.statistics.add(worker_id)
+
+    def _before_finishing(self):
+        # Wait for the remaing jobs to finish
+        # print("Remaining jobs to finish")
+        # print(self.workers.values())
+        # print("Remaining work: %d" % len(self.workers.values()))
+        # print(self.workers)
+        if not any(self.workers.values()):
+            self.statistics.show_results()
+            # This should finish all the workers/client/controller
+            self.stop_event.set()
+            # break
 
     def _handle_worker_message(self, worker_id, message):
         """Handle a message from the worker identified by worker_id.
@@ -109,8 +127,6 @@ class Controller(object):
 
     def _run(self):
         for job in self.work_iterator():
-            # if not job:
-            #     break
             next_worker_id = None
             while next_worker_id is None:
                 # First check if there are any worker messages to process. We
@@ -130,6 +146,13 @@ class Controller(object):
                 next_worker_id = self._get_next_worker_id()
                 if next_worker_id is None:
                     time.sleep(0.5)
+            
+            if self.stop_event.is_set():
+                # print("Stopping event")
+                break
+            if not job:
+                self._before_finishing()
+                continue
             # We've got a Job and an available worker_id, all we need to do
             # is send it. Note that we're now using send_multipart(), the
             # counterpart to recv_multipart(), to tell the ROUTER where our
@@ -143,9 +166,6 @@ class Controller(object):
             self.workers[next_worker_id][job.id] = job.work
             # print("Changed worker job")
             # print(self.workers[next_worker_id])
-            if self.stop_event.is_set():
-                break
-        self.stop_event.set()
 
 
 class Job(object):

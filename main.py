@@ -6,7 +6,7 @@ import time
 
 # Set number of clients and workers
 NBR_CLIENTS = 1
-NBR_WORKERS = 3
+NBR_WORKERS = 5
 
 
 def start(task, *args):
@@ -32,6 +32,6 @@ def start_stack(event):
 if __name__ == "__main__":
     event = Event()
     start_stack(event)
-    while True:
-        time.sleep(10)
-        Client(event)
+    while not event.is_set():
+        time.sleep(5)
+        # Client(event)
