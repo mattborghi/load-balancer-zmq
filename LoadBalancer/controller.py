@@ -1,5 +1,5 @@
 from multiprocessing import Event
-from src.log_info import Logger
+from LoadBalancer.log_info import Logger
 import zmq
 import json
 import time

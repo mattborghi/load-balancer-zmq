@@ -1,7 +1,7 @@
 from multiprocessing import Process, Event
-from src.client import Client
-from src.worker import Worker
-from src.controller import Controller
+from LoadBalancer.client import Client
+from LoadBalancer.worker import Worker
+from LoadBalancer.controller import Controller
 import time
 
 # Set number of clients and workers
