@@ -1,7 +1,7 @@
 from multiprocessing import Process, Event
-from client import Client
-from worker import Worker
-from controller import Controller
+from src.client import Client
+from src.worker import Worker
+from src.controller import Controller
 import time
 
 # Set number of clients and workers
