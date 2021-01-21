@@ -21,10 +21,9 @@ def start(task, *args):
 def start_stack(event):
     # Start controller
     start(Controller, event)
-    # Start background tasks
-    start(Workload)
-    # for i in range(NBR_CLIENTS):
-    #     start(Client, event) # , i
+    # Start Client workload
+    start(Workload, event)
+    # Start workers
     for i in range(NBR_WORKERS):
         start(Worker, event)  # , i
 

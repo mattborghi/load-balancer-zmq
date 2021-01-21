@@ -15,10 +15,11 @@ class Workload(object):
     each time it has to send a task
     """
 
-    def __init__(self, jobs: int = NUMBER_OF_MESSAGES_SENT, wait_time: int = WAIT_TIME):
+    def __init__(self, event, jobs: int = NUMBER_OF_MESSAGES_SENT, wait_time: int = WAIT_TIME):
         self.jobs = jobs
         # iter() makes our xrange object into an iterator so we can use
         # next() on it.
+        self.stop_event = event
         self.iterator = iter(range(0, self.jobs))
         self.wait = wait_time
         self._run()
@@ -33,12 +34,12 @@ class Workload(object):
 
     def _run(self):
         for job in range(self.jobs):
-            event = Event()
+            # event = Event()
             # print("Sending message #%d" % job)
             # print("with messsage %s" % message)
             message = next(self.iterator)
             # print("encapsulated to %s" % self._work_iterator(message))
-            Client(event, self._work_iterator(message))
+            Client(self.stop_event, self._work_iterator(message))
             time.sleep(self.wait)
 
 
@@ -92,4 +93,5 @@ class Client(object):
 
 if __name__ == "__main__":
     # Send 10 jobs waiting 1 second between each message
-    Workload(jobs=10, wait_time=1)
+    event = Event()
+    Workload(event, jobs=10, wait_time=1)
