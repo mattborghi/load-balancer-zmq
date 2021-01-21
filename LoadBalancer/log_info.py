@@ -9,6 +9,10 @@ class Logger(object):
             self.results[worker_id] = 1
 
     def show_results(self):
-        print("{:8} {:15} {:10}".format('Key','Worker','# Tasks'))
-        for count, (k, v) in enumerate(self.results.items(), 1):
-            print("{:8} {:15} {:10}".format(count, k.decode("utf-8"), v))
+        # print("Beautify: %s" % self.results)
+        if self.results:
+            print("{:8} {:15} {:10}".format('Key','Worker','# Tasks'))
+            for count, (k, v) in enumerate(self.results.items(), 1):
+                print("{:8} {:15} {:10}".format(count, k, v))
+        else:
+            print("No tasks completed")
