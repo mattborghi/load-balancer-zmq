@@ -1,4 +1,5 @@
 from multiprocessing import Event
+import json
 import zmq
 import time
 import uuid
@@ -21,7 +22,7 @@ class Worker(object):
         self.socket.setsockopt_string(zmq.IDENTITY, uuid.uuid4().hex[:4])
         # self.socket.identity = bytes(uuid.uuid4().hex[:4], encoding="latin-1")
         self.socket.connect('tcp://127.0.0.1:5755')
-
+        print("Worker %s connected" % self.socket.getsockopt_string(zmq.IDENTITY))
         self._run()
 
     def _do_work(self, work):
@@ -58,17 +59,15 @@ class Worker(object):
                 # the DEALER socket ensures we don't have to deal with
                 # client ids at all.
                 result = self.socket.recv_multipart()
-                # job_id, work = self.socket.recv_json()
-                # job_id, work = result
-                job_id, work = eval(result[0].decode("utf-8"))
-                # print(type(result))
-                # print(len(result))
-                # print(result)
-                print("Received %s with work %s" % (job_id, work))
+                job = json.loads(result[0].decode("utf-8"))
+                job_id = job["id"]
+                # print("Received %s with work %s" % (job_id, job))
                 self.socket.send_json(
                     {'message': 'job_done',
-                        'result': self._do_work(work),
+                        'result': self._do_work(job),
                         'job_id': job_id})
+        except KeyboardInterrupt:
+            pass
         except Exception as e:
             print(e)
         finally:
