@@ -34,6 +34,8 @@ class Worker(object):
         """
         # self.stop_event.set()
         self.socket.send_json({'message': 'disconnect'})
+        self.socket.close()
+        self.context.term()
         exit()
 
     def _run(self):

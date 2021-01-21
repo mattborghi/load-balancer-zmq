@@ -29,8 +29,6 @@ python main.py
 
 ## B. Separately
 
-> **CAUTION**: First edit `LoadBalancer/controller.py` file
-
 Run controller
 
 ```sh

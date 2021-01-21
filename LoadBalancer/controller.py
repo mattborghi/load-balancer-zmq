@@ -1,5 +1,4 @@
 from multiprocessing import Event
-from LoadBalancer.log_info import Logger
 import zmq
 import json
 import time
@@ -7,6 +6,7 @@ import uuid
 
 
 MAX_WORK_PER_SESSION = 50
+MAX_JOBS_PER_WORKER = 2
 
 class Controller(object):
     def __init__(self, event):
@@ -23,7 +23,7 @@ class Controller(object):
 
         # We won't assign more than 50 jobs to a worker at a time; this ensures
         # reasonable memory usage, and less shuffling when a worker dies.
-        self.max_jobs_per_worker = 2
+        self.max_jobs_per_worker = MAX_JOBS_PER_WORKER
         self._work_to_requeue = {}
         # Use the same socket to receive the results as we are using a ROUTER socket
         self.socket_result = self.socket
@@ -124,6 +124,10 @@ class Controller(object):
             # omitted it from here, but you can find it in the final source
             # code.
             self._process_results(worker_id, job_id, result)
+    
+    def _close_connections(self):
+        self.socket.close()
+        self.context.term()
 
     def _run(self):
         for job in self.work_iterator():
@@ -149,6 +153,7 @@ class Controller(object):
             
             if self.stop_event.is_set():
                 # print("Stopping event")
+                self._close_connections()
                 break
             if not job:
                 self._before_finishing()
@@ -175,6 +180,9 @@ class Job(object):
 
 
 if __name__ == "__main__":
+    from log_info import Logger
     event = Event()
     controller = Controller(event)
     # controller.run()
+else:
+    from LoadBalancer.log_info import Logger
