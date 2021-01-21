@@ -6,9 +6,9 @@ with open("README.md", "r", encoding="utf-8") as fh:
 setuptools.setup(
     name="LoadBalancer", # Replace with your own username
     version="0.0.1",
-    author="Example Author",
-    author_email="author@example.com",
-    description="A small example package",
+    author="Matias Borghi",
+    author_email="borghi.matias@gmail.com",
+    description="ZMQ's Load Balancer pattern implementation",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/mattborghi/load-balancer-zmq",
