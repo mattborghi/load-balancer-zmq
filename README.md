@@ -21,13 +21,15 @@ pipenv install
 pipenv shell
 ```
 
-## Together
+## A. Together
 
 ```sh
 python main.py
 ```
 
-## Separately (CAUTION: First edit LoadBalancer/controller.py file)
+## B. Separately
+
+> **CAUTION**: First edit `LoadBalancer/controller.py` file
 
 Run controller
 
@@ -35,7 +37,7 @@ Run controller
 python LoadBalancer/controller.py
 ```
 
-Run worker
+Run this line for each worker you want to spawn in a separater terminal
 
 ```sh
 python LoadBalancer/worker.py
