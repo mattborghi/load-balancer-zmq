@@ -23,8 +23,7 @@ def start_stack(event):
     start(Controller, event)
     # Start background tasks
     for i in range(NBR_CLIENTS):
-        pass
-        # start(client_task, event, i)
+        start(Client, event) # , i
     for i in range(NBR_WORKERS):
         start(Worker, event)  # , i
 

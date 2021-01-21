@@ -15,6 +15,11 @@ class Controller(object):
         self.socket = self.context.socket(zmq.ROUTER)
         self.socket.bind("tcp://127.0.0.1:5755")
         # print("connected to %s" % self.socket)
+
+        # Connect to Client
+        self.frontend = self.context.socket(zmq.ROUTER)
+        self.frontend.connect("tcp://127.0.0.1:5754")
+
         # We'll keep our workers here, this will be keyed on the worker id,
         # and the value will be a dict of Job instances keyed on job id.
         self.workers = {}
@@ -54,7 +59,7 @@ class Controller(object):
     def work_iterator(self):
         # iter() makes our xrange object into an iterator so we can use
         # next() on it.
-        iterator = iter(range(0, MAX_WORK_PER_SESSION))
+        # iterator = iter(range(0, MAX_WORK_PER_SESSION))
         while True:
             # Return requeued work first. We could simplify this method by
             # returning all new work then all requeued work, but this way we
@@ -69,7 +74,11 @@ class Controller(object):
                 yield Job(elem, name)
             else:
                 try:
-                    yield Job({"number": next(iterator)})
+                    print("waiting for message")
+                    client_id, message = self.frontend.recv_multipart()
+                    print("received message %s" % message.decode("utf-8"))
+                    yield Job(json.loads(message.decode("utf-8")))
+                    # yield Job({"number": next(iterator)})
                 except StopIteration:
                     # print("Stopped Iteration")
                     yield None
