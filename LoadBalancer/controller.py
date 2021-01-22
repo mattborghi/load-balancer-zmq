@@ -17,12 +17,8 @@ class Controller(object):
 
     Parameters
     ----------
-        event :
+        event : Event
             Event object of multiprocessing used for terminating the processes.
-            ```python
-            from multiprocessing import Event
-            event = Event()
-            ```
         backend_host: str
             Controller's backend host connection
         backend_port: int
@@ -36,7 +32,7 @@ class Controller(object):
 
     def __init__(
         self,
-        event,
+        event: Event = Event(),
         backend_host: str = BACKEND_HOST,
         backend_port: int = BACKEND_PORT,
         frontend_host: str = FRONTEND_HOST,
@@ -207,7 +203,6 @@ class Controller(object):
 if __name__ == "__main__":
     from log_info import Logger
 
-    event = Event()
-    controller = Controller(event)
+    Controller()
 else:
     from LoadBalancer.log_info import Logger

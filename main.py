@@ -24,7 +24,7 @@ def start_stack(event):
     # Start Client workload
     start(Workload, event)
     # Start workers
-    for i in range(NBR_WORKERS):
+    for _ in range(NBR_WORKERS):
         start(Worker, event)
 
 

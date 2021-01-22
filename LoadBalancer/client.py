@@ -20,12 +20,8 @@ class Workload(object):
 
     Parameters
     ----------
-    event :
+    event : multiprocessing.Event
         Event object of multiprocessing used for terminating the processes.
-        ```python
-        from multiprocessing import Event
-        event = Event()
-        ```
     jobs : int
         Number of messages sent in the workload.
     wait_time: int
@@ -34,7 +30,10 @@ class Workload(object):
     """
 
     def __init__(
-        self, event, jobs: int = NUMBER_OF_MESSAGES_SENT, wait_time: int = WAIT_TIME
+        self,
+        event: Event = Event(),
+        jobs: int = NUMBER_OF_MESSAGES_SENT,
+        wait_time: int = WAIT_TIME,
     ):
         self.stop_event = event
         self.jobs = jobs
@@ -49,7 +48,7 @@ class Workload(object):
     def _run(self):
         for _ in range(self.jobs):
             message = next(self.iterator)
-            Client(self.stop_event, self._work_iterator(message, message / 2))
+            Client(self._work_iterator(message, message / 2), self.stop_event)
             time.sleep(self.wait)
 
 
@@ -85,12 +84,8 @@ class Client(object):
 
     Parameters
     ----------
-        event :
+        event : Event
             Event object of multiprocessing used for terminating the processes.
-            ```python
-            from multiprocessing import Event
-            event = Event()
-            ```
         data : dict
             A Job object
         host: str
@@ -100,7 +95,11 @@ class Client(object):
     """
 
     def __init__(
-        self, event, data: dict, host: str = CLIENT_HOST, port: int = CLIENT_PORT
+        self,
+        data: dict,
+        event: Event = Event(),
+        host: str = CLIENT_HOST,
+        port: int = CLIENT_PORT,
     ):
         self.stop_event = event
         self.context = zmq.Context()
@@ -138,5 +137,4 @@ class Client(object):
 
 if __name__ == "__main__":
     # Send 10 jobs waiting 1 second between each message
-    event = Event()
-    Workload(event, jobs=10, wait_time=3)
+    Workload(jobs=10, wait_time=3)

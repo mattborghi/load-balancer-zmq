@@ -13,19 +13,15 @@ WORKER_PORT = 5755
 class Worker(object):
     """
     Send a messaage when connected of the form {'message': 'connect'}.
-    Accept work in the form of {'number1': xxx, 'number2': xxx}, square the number1, 
+    Accept work in the form of {'number1': xxx, 'number2': xxx}, square the number1,
     sum the number2 and send it back to the controller in the form
-    {'message': 'job_done','result': xxx, 'job_id': yyy}. 
-    
-    
+    {'message': 'job_done','result': xxx, 'job_id': yyy}.
+
+
     Parameters
     ----------
-        event :
+        event : Event
             Event object of multiprocessing used for terminating the processes.
-            ```python
-            from multiprocessing import Event
-            event = Event()
-            ```
         host: str
             Worker host connection
         port: int
@@ -33,7 +29,9 @@ class Worker(object):
 
     """
 
-    def __init__(self, event, host=WORKER_HOST, port=WORKER_PORT):
+    def __init__(
+        self, event: Event = Event(), host: str = WORKER_HOST, port: int = WORKER_PORT
+    ):
         self.stop_event = event
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.DEALER)
@@ -60,7 +58,7 @@ class Worker(object):
 
     def _run(self):
         """
-        Run the worker until the event is terminated.        
+        Run the worker until the event is terminated.
         """
         try:
             # Send a connect message
@@ -85,5 +83,4 @@ class Worker(object):
 
 
 if __name__ == "__main__":
-    event = Event()
-    worker = Worker(event)
+    Worker()
