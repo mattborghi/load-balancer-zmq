@@ -11,14 +11,30 @@ WORKER_PORT = 5755
 
 
 class Worker(object):
-    """Accept work in the form of {'number': xxx}, square the number and
-    send it back to the controller in the form
-    {'result': xxx, 'worker_id': yyy}. Our "work" in this case is just
-    squaring the contents of 'number'.
+    """
+    Send a messaage when connected of the form {'message': 'connect'}.
+    Accept work in the form of {'number1': xxx, 'number2': xxx}, square the number1, 
+    sum the number2 and send it back to the controller in the form
+    {'message': 'job_done','result': xxx, 'job_id': yyy}. 
+    
+    
+    Parameters
+    ----------
+        event :
+            Event object of multiprocessing used for terminating the processes.
+            ```python
+            from multiprocessing import Event
+            event = Event()
+            ```
+        host: str
+            Worker host connection
+        port: int
+            Worker port connection
+
     """
 
-    def __init__(self, stop_event, host=WORKER_HOST, port=WORKER_PORT):
-        self.stop_event = stop_event
+    def __init__(self, event, host=WORKER_HOST, port=WORKER_PORT):
+        self.stop_event = event
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.DEALER)
         self.host = host
@@ -31,12 +47,12 @@ class Worker(object):
         self._run()
 
     def _do_work(self, work):
-        result = work["number"] ** 2
+        result = work["number1"] ** 2 + work["number2"]
         time.sleep(random.randint(1, 10))
         return result
 
     def _disconnect(self):
-        """Send the Controller a disconnect message and end the run loop."""
+        """Send the Controller a disconnect message close connections."""
         self.socket.send_json({"message": "disconnect"})
         self.socket.close()
         self.context.term()
@@ -44,8 +60,7 @@ class Worker(object):
 
     def _run(self):
         """
-        Run the worker forever.
-        We can use the multiprocessing events to better manage its termination events
+        Run the worker until the event is terminated.        
         """
         try:
             # Send a connect message

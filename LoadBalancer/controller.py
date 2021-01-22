@@ -2,8 +2,6 @@ from multiprocessing import Event
 from copy import copy
 import zmq
 import json
-import time
-import uuid
 
 # Controller parameters
 MAX_JOBS_PER_WORKER = 2
@@ -14,13 +12,35 @@ BACKEND_PORT = 5755
 
 
 class Controller(object):
+    """
+    Proxy class for the Load Balancer pattern.
+
+    Parameters
+    ----------
+        event :
+            Event object of multiprocessing used for terminating the processes.
+            ```python
+            from multiprocessing import Event
+            event = Event()
+            ```
+        backend_host: str
+            Controller's backend host connection
+        backend_port: int
+            Controller's backend port connection
+        frontend_host: str
+            Controller's frontend host connection
+        frontend_port: int
+            Controller's frontend port connection
+
+    """
+
     def __init__(
         self,
         event,
-        backend_host=BACKEND_HOST,
-        backend_port=BACKEND_PORT,
-        frontend_host=FRONTEND_HOST,
-        frontend_port=FRONTEND_PORT,
+        backend_host: str = BACKEND_HOST,
+        backend_port: int = BACKEND_PORT,
+        frontend_host: str = FRONTEND_HOST,
+        frontend_port: int = FRONTEND_PORT,
     ):
         self.backend_host = backend_host
         self.backend_port = backend_port
@@ -56,6 +76,9 @@ class Controller(object):
     def _get_next_worker_id(self):
         """Return the id of the next worker available to process work. Note
         that this will return None if no clients are available.
+
+        The next available worker is selected as the worker with less job assigned
+        with the caveat that they have assined less than their respective max_jobs_per_worker.
         """
         # It isn't strictly necessary since we're limiting the amount of work
         # we assign, but just to demonstrate that we could have any
@@ -69,13 +92,23 @@ class Controller(object):
         # No worker is available. Our caller will have to handle this.
         return None
 
-    def _process_results(self, worker_id, job_id, result):
+    def _process_results(self, worker_id: str, job_id: str, result) -> None:
+        """
+        - Simple logger that prints the output to the screen when a new result is obtained.
+        - Also adds to Logger object information about finish tasks.
+
+        Args:
+            worker_id (str): Worker Id
+            job_id (str): Job Id
+            result (number): Result of job
+        """
         print(
             "Worker ID %s finished job %s with result %s" % (worker_id, job_id, result)
         )
         self.statistics.add(worker_id)
 
     def _before_finishing(self):
+        """Tasks done before finishing"""
         remaining_jobs = self.workers.values()
         if not any(remaining_jobs):
             print("There are pending jobs")
@@ -83,7 +116,7 @@ class Controller(object):
         # This should finish all the workers/client/controller
         self.stop_event.set()
 
-    def _handle_worker_message(self, worker_id, message):
+    def _handle_worker_message(self, worker_id: str, message: dict) -> None:
         """Handle a message from the worker identified by worker_id.
 
         {'message': 'connect'}
@@ -104,12 +137,37 @@ class Controller(object):
             del self.workers[worker_id][job_id]
             self._process_results(worker_id, job_id, result)
 
+    def _handle_client_message(self, request: dict) -> None:
+        """
+        Handle a message from the client.
+        We don't need to identify them to a client_id as we run with only 1 client.
+
+        {'message': 'connect', 'job': job_payload}
+        {'message': 'disconnect'}
+
+        job_payload is another dict which is an instance of the Job class.
+
+        """
+
+        if request["message"] == "connect":
+            # append job to task list
+            self._work_to_requeue.append(request["job"])
+        elif request["message"] == "disconnect":
+            pass
+        else:
+            Exception("Unhandled client message")
+
     def _close_connections(self):
+        """Close connections"""
         self.frontend.close()
         self.backend.close()
         self.context.term()
 
     def _run(self):
+        """
+        Main function. Run the Proxy until the event stop is fired.
+        Receive message fron the frontend or backend
+        """
         try:
             while not self.stop_event.is_set():
                 sockets = dict(self.poller.poll())
@@ -121,15 +179,11 @@ class Controller(object):
                     self._handle_worker_message(worker_id, message)
 
                 if self.frontend in sockets:
+                    # TODO: Get the client_id and send it to _handle_client_message
+                    # if we want to handle several clients
                     _, payload = self.frontend.recv_multipart()
                     request = json.loads(payload.decode("utf-8"))
-                    if request["message"] == "connect":
-                        # append job to task list
-                        self._work_to_requeue.append(request["job"])
-                    elif request["message"] == "disconnect":
-                        pass
-                    else:
-                        Exception("Unhandled client message")
+                    self._handle_client_message(request)
 
                 # Run tasks
                 next_worker_id = self._get_next_worker_id()
