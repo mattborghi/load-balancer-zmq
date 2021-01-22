@@ -40,3 +40,9 @@ Run this line for each worker you want to spawn in a separater terminal
 ```sh
 python LoadBalancer/worker.py
 ```
+
+# Generate release files with name based on setup.py
+
+```sh
+python setup.py sdist bdist_wheel
+```
