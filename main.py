@@ -5,7 +5,7 @@ from LoadBalancer.controller import Controller
 import time
 
 # Set number of clients and workers
-NBR_CLIENTS = 1
+# NBR_CLIENTS = 1
 NBR_WORKERS = 2
 
 
@@ -25,7 +25,7 @@ def start_stack(event):
     start(Workload, event)
     # Start workers
     for i in range(NBR_WORKERS):
-        start(Worker, event)  # , i
+        start(Worker, event)
 
 
 if __name__ == "__main__":
@@ -35,6 +35,4 @@ if __name__ == "__main__":
         try:
             time.sleep(5)
         except KeyboardInterrupt:
-            event.set()
-    print("Wait 5 seconds before quitting main script")
-    time.sleep(5)
+            pass

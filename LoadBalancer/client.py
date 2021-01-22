@@ -3,10 +3,14 @@ import zmq
 import uuid
 import time
 
+# Workload parameters
 NUMBER_OF_MESSAGES_SENT = 4
 # If we use 0 we should see the jobs well distributed as we are simulating
 # tasks that consume practicaly zero time
 WAIT_TIME = 0
+# CLient parameters
+CLIENT_HOST = "127.0.0.1"
+CLIENT_PORT = 5754
 
 
 class Workload(object):
@@ -15,37 +19,31 @@ class Workload(object):
     each time it has to send a task
     """
 
-    def __init__(self, event, jobs: int = NUMBER_OF_MESSAGES_SENT, wait_time: int = WAIT_TIME):
-        self.jobs = jobs
-        # iter() makes our xrange object into an iterator so we can use
-        # next() on it.
+    def __init__(
+        self, event, 
+        jobs: int = NUMBER_OF_MESSAGES_SENT, 
+        wait_time: int = WAIT_TIME
+    ):
         self.stop_event = event
+        self.jobs = jobs
+        # iter() makes our xrange object into an iterator so we can use next() on it.
         self.iterator = iter(range(0, self.jobs))
         self.wait = wait_time
         self._run()
 
     def _work_iterator(self, job) -> dict:
-        # Send NUMBER_OF_MESSAGES_SENT or None
-        # try:
         return Job({"number": job})
-        # except StopIteration:
-        # print("Stopped Iteration")
-        # yield None
-
+        
     def _run(self):
         for job in range(self.jobs):
-            # event = Event()
-            # print("Sending message #%d" % job)
-            # print("with messsage %s" % message)
             message = next(self.iterator)
-            # print("encapsulated to %s" % self._work_iterator(message))
             Client(self.stop_event, self._work_iterator(message))
             time.sleep(self.wait)
 
 
 class Job(object):
     def __init__(self, work, id=None):
-        self.id = id if id else uuid.uuid4().hex
+        self.id = id if id else uuid.uuid4().hex[:4]
         self.work = work
 
     def result(self):
@@ -57,19 +55,20 @@ class Client(object):
     Client instance of a load balancer pattern
     """
 
-    def __init__(self, event, data):
+    def __init__(self, event, data, host=CLIENT_HOST, port=CLIENT_PORT):
         self.stop_event = event
         self.context = zmq.Context()
+        self.host = host
+        self.port = port
         self.socket = self.context.socket(zmq.DEALER)
-        self.socket.bind("tcp://127.0.0.1:5754")
+        self.socket.bind("tcp://%s:%d" % (self.host, self.port))
         self.socket.setsockopt_string(zmq.IDENTITY, uuid.uuid4().hex)
-        # Object to send
+        # Object to send over the sockets
         self.data = data
         self._run()
 
     def _disconnect(self):
         """ Disconnect the Client """
-        # self.stop_event.set()
         self.socket.send_json(
             {
                 "client_id": self.socket.getsockopt_string(zmq.IDENTITY),
