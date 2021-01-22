@@ -5,3 +5,12 @@ ventilator
 .vscode
 __pycache__
 *.pyc
+
+# setup.py dist directory
+dist
+# setup.py working directory
+build
+# Egg metadata
+*.egg-info
+.eggs
+.pypirc
