@@ -93,7 +93,8 @@ class Controller(object):
         - Simple logger that prints the output to the screen when a new result is obtained.
         - Also adds to Logger object information about finish tasks.
 
-        Args:
+        Parameters
+        ----------
             worker_id (str): Worker Id
             job_id (str): Job Id
             result (number): Result of job
@@ -101,14 +102,15 @@ class Controller(object):
         print(
             "Worker ID %s finished job %s with result %s" % (worker_id, job_id, result)
         )
-        self.statistics.add(worker_id)
+        self.statistics.add(worker_id, job_id, result)
 
     def _before_finishing(self):
         """Tasks done before finishing"""
         remaining_jobs = self.workers.values()
         if not any(remaining_jobs):
             print("There are pending jobs")
-        self.statistics.show_results()
+        self.statistics.show_tasks_per_worker()
+        self.statistics.show_processed_tasks()
         # This should finish all the workers/client/controller
         self.stop_event.set()
 
