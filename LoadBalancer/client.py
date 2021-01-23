@@ -50,6 +50,7 @@ class Workload(object):
             message = next(self.iterator)
             Client(self._work_iterator(message, message / 2), self.stop_event)
             time.sleep(self.wait)
+        print("\n\nWorkload finished.\n")
 
 
 class Job(object):

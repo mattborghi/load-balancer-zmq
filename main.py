@@ -2,6 +2,7 @@ from multiprocessing import Process, Event
 from LoadBalancer.client import Client, Workload
 from LoadBalancer.worker import Worker
 from LoadBalancer.controller import Controller
+from LoadBalancer.sink import Sink
 import time
 
 # Set number of clients and workers
@@ -21,6 +22,8 @@ def start(task, *args):
 def start_stack(event):
     # Start controller
     start(Controller, event)
+    # Start Sink
+    start(Sink, event)
     # Start Client workload
     start(Workload, event)
     # Start workers

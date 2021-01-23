@@ -9,6 +9,8 @@ FRONTEND_HOST = "127.0.0.1"
 FRONTEND_PORT = 5754
 BACKEND_HOST = "127.0.0.1"
 BACKEND_PORT = 5755
+SINK_HOST = "127.0.0.1"
+SINK_PORT = 5758
 
 
 class Controller(object):
@@ -27,6 +29,13 @@ class Controller(object):
             Controller's frontend host connection
         frontend_port: int
             Controller's frontend port connection
+        use_sink: bool
+            Send the results to a Sink.
+        sink_host: str
+            Controller's Sink host connection
+        sink_port: int
+            Controller's Sink port connection
+
 
     """
 
@@ -37,6 +46,9 @@ class Controller(object):
         backend_port: int = BACKEND_PORT,
         frontend_host: str = FRONTEND_HOST,
         frontend_port: int = FRONTEND_PORT,
+        use_sink: bool = True,
+        sink_host: str = SINK_HOST,
+        sink_port: int = SINK_PORT,
     ):
         self.backend_host = backend_host
         self.backend_port = backend_port
@@ -50,6 +62,14 @@ class Controller(object):
         # Connect to Client
         self.frontend = self.context.socket(zmq.ROUTER)
         self.frontend.connect("tcp://%s:%d" % (self.frontend_host, self.frontend_port))
+
+        # Connect to sink
+        self.use_sink = use_sink
+        if self.use_sink:
+            self.sink_host = sink_host
+            self.sink_port = sink_port
+            self.sink = self.context.socket(zmq.PUSH)
+            self.sink.connect("tcp://%s:%d" % (self.sink_host, self.sink_port))
 
         # We'll keep our workers here, this will be keyed on the worker id,
         # and the value will be a dict of Job instances keyed on job id.
@@ -92,6 +112,7 @@ class Controller(object):
         """
         - Simple logger that prints the output to the screen when a new result is obtained.
         - Also adds to Logger object information about finish tasks.
+        - Sends results to Sink.
 
         Parameters
         ----------
@@ -103,12 +124,15 @@ class Controller(object):
             "Worker ID %s finished job %s with result %s" % (worker_id, job_id, result)
         )
         self.statistics.add(worker_id, job_id, result)
+        # If we have a sink send the result
+        if self.use_sink:
+            self.sink.send_json({"job_id": job_id, "result": result})
 
     def _before_finishing(self):
         """Tasks done before finishing"""
         remaining_jobs = self.workers.values()
-        if not any(remaining_jobs):
-            print("There are pending jobs")
+        self.statistics.show_pending_jobs(remaining_jobs)
+        
         self.statistics.show_tasks_per_worker()
         self.statistics.show_processed_tasks()
         # This should finish all the workers/client/controller
@@ -159,6 +183,8 @@ class Controller(object):
         """Close connections"""
         self.frontend.close()
         self.backend.close()
+        if self.use_sink:
+            self.sink.close()
         self.context.term()
 
     def _run(self):
