@@ -150,6 +150,7 @@ class Controller(object):
         {'worker_id': 'xxx', 'message': 'connect'}
         {'worker_id': 'xxx', 'message': 'disconnect'}
         {'worker_id': 'xxx', 'message': 'job_done', 'job': job_payload}
+        {'worker_id': 'xxx', 'message': 'job_failed', 'job': job_payload}
 
         where job_payload is an instance of the Job class.
         """
@@ -161,7 +162,7 @@ class Controller(object):
             for k, v in remaining_work.items():
                 v["id"] = k
                 self._work_to_requeue.append(v)
-        elif message["message"] == "job_done":
+        elif message["message"] == "job_done" or message["message"] == "job_failed":
             job = message["job"]
             del self.workers[worker_id][job["id"]]
             self._process_results(worker_id, job)
