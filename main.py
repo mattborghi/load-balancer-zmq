@@ -3,6 +3,7 @@ from LoadBalancer.client import Client, Workload
 from LoadBalancer.worker import Worker
 from LoadBalancer.controller import Controller
 from LoadBalancer.sink import Sink
+from LoadBalancer.job import Job
 import time
 
 # Set number of clients and workers
