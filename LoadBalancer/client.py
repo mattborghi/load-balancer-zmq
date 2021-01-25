@@ -1,7 +1,10 @@
 from multiprocessing import Event
+from LoadBalancer.job import Job
 import zmq
 import uuid
 import time
+import random
+import string
 
 # Workload parameters
 NUMBER_OF_MESSAGES_SENT = 4
@@ -43,40 +46,15 @@ class Workload(object):
         self._run()
 
     def _work_iterator(self, number1, number2) -> dict:
-        return Job({"number1": number1, "number2": number2})
+        name = "".join(random.choice(string.ascii_lowercase) for i in range(10))
+        return Job({"number1": number1, "number2": number2}, name)
 
     def _run(self):
         for _ in range(self.jobs):
             message = next(self.iterator)
             Client(self._work_iterator(message, message / 2), self.stop_event)
             time.sleep(self.wait)
-        print("\n\nWorkload finished.\n")
-
-
-class Job(object):
-    """
-    Define an object to be sent to the workers to be processed.
-
-    Job sent are in the form of:
-
-    {
-        "id": uuid4
-        "number1": number
-        "number2": number
-    }
-
-    """
-
-    def __init__(self, payload: dict, id=None) -> dict:
-        self.id = id if id else uuid.uuid4().hex[:4]
-        self.payload = payload
-
-    def result(self):
-        return {
-            "id": self.id,
-            "number1": self.payload["number1"],
-            "number2": self.payload["number2"],
-        }
+        print("\n\nWorkload already sent.\n")
 
 
 class Client(object):
@@ -130,7 +108,7 @@ class Client(object):
             {
                 "client_id": self.socket.getsockopt_string(zmq.IDENTITY),
                 "message": "connect",
-                "job": self.data.result(),
+                "job": self.data.get_job(),
             }
         )
         self._disconnect()
