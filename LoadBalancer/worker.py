@@ -1,4 +1,5 @@
 from multiprocessing import Event
+from LoadBalancer.job import Job
 import json
 import zmq
 import time
@@ -12,10 +13,11 @@ WORKER_PORT = 5755
 
 class Worker(object):
     """
-    Send a messaage when connected of the form {'message': 'connect'}.
-    Accept work in the form of {'number1': xxx, 'number2': xxx}, square the number1,
+    Send a message when connected of the form {'worker_id': 'xxx', 'message': 'connect'}.
+    Accept work in the form of the job object class {'number1': xxx, 'number2': xxx}, square the number1,
     sum the number2 and send it back to the controller in the form
-    {'message': 'job_done','result': xxx, 'job_id': yyy}.
+    {'worker_id': 'xxx', 'message': 'job_done', 'job': job_payload}.
+    Where job_payload has the information about the result.
 
 
     Parameters
@@ -37,10 +39,11 @@ class Worker(object):
         self.socket = self.context.socket(zmq.DEALER)
         self.host = host
         self.port = port
-        self.socket.setsockopt_string(zmq.IDENTITY, uuid.uuid4().hex[:4])
+        self.socket_id = uuid.uuid4().hex[:4]
+        self.socket.setsockopt_string(zmq.IDENTITY, self.socket_id)
         self.socket.connect("tcp://%s:%d" % (self.host, self.port))
 
-        print("Worker %s connected" % self.socket.getsockopt_string(zmq.IDENTITY))
+        print("Worker %s connected" % self.socket_id)
 
         self._run()
 
@@ -51,7 +54,7 @@ class Worker(object):
 
     def _disconnect(self):
         """Send the Controller a disconnect message close connections."""
-        self.socket.send_json({"message": "disconnect"})
+        self.socket.send_json({"worker_id": self.socket_id,"message": "disconnect"})
         self.socket.close()
         self.context.term()
         exit()
@@ -62,16 +65,16 @@ class Worker(object):
         """
         try:
             # Send a connect message
-            self.socket.send_json({"message": "connect"})
+            self.socket.send_json({"worker_id": self.socket_id, "message": "connect"})
             while not self.stop_event.is_set():
                 result = self.socket.recv_multipart()
                 job = json.loads(result[0].decode("utf-8"))
-                job_id = job["id"]
+                value = self._do_work(job)
                 self.socket.send_json(
                     {
+                        "worker_id": self.socket_id,
                         "message": "job_done",
-                        "result": self._do_work(job),
-                        "job_id": job_id,
+                        "job": Job.get_result(job, value)
                     }
                 )
         except KeyboardInterrupt:
