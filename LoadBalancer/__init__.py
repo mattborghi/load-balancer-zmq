@@ -1,1 +1,1 @@
-from .job import Job
+__version__ = "0.4.4"

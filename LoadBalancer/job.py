@@ -1,5 +1,6 @@
 import uuid
 
+
 class Job(object):
     """
     Define an object to be sent to the workers to be processed.
@@ -27,10 +28,15 @@ class Job(object):
             "name": self.name,
             "number1": self.payload["number1"],
             "number2": self.payload["number2"],
-            "result": self.result
+            "result": self.result,
         }
 
     @staticmethod
     def get_result(data: dict, result) -> dict:
         data["result"] = result
         return data
+
+
+if __name__ == "__main__":
+    job = Job({"number1": 1, "number2": 2}, name="Test Name")
+    print("Created job: ", job.get_job())
