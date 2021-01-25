@@ -1,5 +1,4 @@
 from multiprocessing import Event
-from LoadBalancer.job import Job
 import zmq
 import uuid
 import time
@@ -115,5 +114,8 @@ class Client(object):
 
 
 if __name__ == "__main__":
+    from job import Job
     # Send 10 jobs waiting 1 second between each message
     Workload(jobs=10, wait_time=3)
+else:
+    from LoadBalancer.job import Job
