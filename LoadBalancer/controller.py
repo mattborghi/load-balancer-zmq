@@ -226,7 +226,7 @@ class Controller(object):
                 if next_worker_id and self._work_to_requeue:
                     job = self._work_to_requeue.pop(0)
                     if self.debug:
-                        print("Sending message to worker %s" % job)
+                        print("Sending message to worker id %s job %s" % (next_worker_id, job))
                     self.backend.send_string(next_worker_id, flags=zmq.SNDMORE)
                     self.backend.send_json(job)
                     payload = copy(job)
