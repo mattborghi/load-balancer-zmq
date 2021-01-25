@@ -108,7 +108,7 @@ class Controller(object):
         # No worker is available. Our caller will have to handle this.
         return None
 
-    def _process_results(self, worker_id: str, job_id: str, result) -> None:
+    def _process_results(self, worker_id: str, job: dict) -> None:
         """
         - Simple logger that prints the output to the screen when a new result is obtained.
         - Also adds to Logger object information about finish tasks.
@@ -117,22 +117,25 @@ class Controller(object):
         Parameters
         ----------
             worker_id (str): Worker Id
-            job_id (str): Job Id
-            result (number): Result of job
+            job (dict): Job instance
+
         """
+
+        job_id = job["id"]
+        result = job["result"]
         print(
             "Worker ID %s finished job %s with result %s" % (worker_id, job_id, result)
         )
         self.statistics.add(worker_id, job_id, result)
         # If we have a sink send the result
         if self.use_sink:
-            self.sink.send_json({"job_id": job_id, "result": result})
+            self.sink.send_json(job)
 
     def _before_finishing(self):
         """Tasks done before finishing"""
         remaining_jobs = self.workers.values()
         self.statistics.show_pending_jobs(remaining_jobs)
-        
+
         self.statistics.show_tasks_per_worker()
         self.statistics.show_processed_tasks()
         # This should finish all the workers/client/controller
@@ -141,9 +144,11 @@ class Controller(object):
     def _handle_worker_message(self, worker_id: str, message: dict) -> None:
         """Handle a message from the worker identified by worker_id.
 
-        {'message': 'connect'}
-        {'message': 'disconnect'}
-        {'message': 'job_done', 'job_id': 'xxx', 'result': 'yyy'}
+        {'worker_id': 'xxx', 'message': 'connect'}
+        {'worker_id': 'xxx', 'message': 'disconnect'}
+        {'worker_id': 'xxx', 'message': 'job_done', 'job': job_payload}
+
+        where job_payload is an instance of the Job class.
         """
         if message["message"] == "connect":
             assert worker_id not in self.workers
@@ -154,18 +159,17 @@ class Controller(object):
                 v["id"] = k
                 self._work_to_requeue.append(v)
         elif message["message"] == "job_done":
-            result = message["result"]
-            job_id = message["job_id"]
-            del self.workers[worker_id][job_id]
-            self._process_results(worker_id, job_id, result)
+            job = message["job"]
+            del self.workers[worker_id][job["id"]]
+            self._process_results(worker_id, job)
 
     def _handle_client_message(self, request: dict) -> None:
         """
         Handle a message from the client.
         We don't need to identify them to a client_id as we run with only 1 client.
 
-        {'message': 'connect', 'job': job_payload}
-        {'message': 'disconnect'}
+        {'client_id': 'xxx', 'message': 'connect', 'job': job_payload}
+        {'client_id': 'xxx', 'message': 'disconnect'}
 
         job_payload is another dict which is an instance of the Job class.
 
@@ -197,9 +201,9 @@ class Controller(object):
                 sockets = dict(self.poller.poll())
 
                 if self.backend in sockets:
-                    worker_id, message = self.backend.recv_multipart()
-                    worker_id = worker_id.decode("utf-8")
+                    _, message = self.backend.recv_multipart()
                     message = json.loads(message.decode("utf-8"))
+                    worker_id = message["worker_id"]
                     self._handle_worker_message(worker_id, message)
 
                 if self.frontend in sockets:
@@ -224,8 +228,8 @@ class Controller(object):
         except Exception as e:
             print(e)
         finally:
-            self._close_connections()
             self._before_finishing()
+            self._close_connections()
 
 
 if __name__ == "__main__":
