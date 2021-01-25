@@ -35,7 +35,8 @@ class Controller(object):
             Controller's Sink host connection
         sink_port: int
             Controller's Sink port connection
-
+        debug: Bool
+            Activate debug log.
 
     """
 
@@ -49,7 +50,9 @@ class Controller(object):
         use_sink: bool = True,
         sink_host: str = SINK_HOST,
         sink_port: int = SINK_PORT,
+        debug: bool = False,
     ):
+        self.debug = debug
         self.backend_host = backend_host
         self.backend_port = backend_port
         self.frontend_host = frontend_host
@@ -203,6 +206,8 @@ class Controller(object):
                 if self.backend in sockets:
                     _, message = self.backend.recv_multipart()
                     message = json.loads(message.decode("utf-8"))
+                    if self.debug:
+                        print("Received message from Backend %s" % message)
                     worker_id = message["worker_id"]
                     self._handle_worker_message(worker_id, message)
 
@@ -211,6 +216,8 @@ class Controller(object):
                     # if we want to handle several clients
                     _, payload = self.frontend.recv_multipart()
                     request = json.loads(payload.decode("utf-8"))
+                    if self.debug:
+                        print("Received message from frontend %s" % request)
                     self._handle_client_message(request)
 
                 # Run tasks
@@ -219,6 +226,8 @@ class Controller(object):
                 if next_worker_id and self._work_to_requeue:
                     job = self._work_to_requeue.pop(0)
                     self.backend.send_string(next_worker_id, flags=zmq.SNDMORE)
+                    if self.debug:
+                        print("Sending message to worker %s" % job)
                     self.backend.send_json(job)
                     payload = copy(job)
                     job_id = payload.pop("id")
