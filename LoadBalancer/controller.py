@@ -225,9 +225,9 @@ class Controller(object):
                 # if a worker is available and also a task is waiting to be processed
                 if next_worker_id and self._work_to_requeue:
                     job = self._work_to_requeue.pop(0)
-                    self.backend.send_string(next_worker_id, flags=zmq.SNDMORE)
                     if self.debug:
                         print("Sending message to worker %s" % job)
+                    self.backend.send_string(next_worker_id, flags=zmq.SNDMORE)
                     self.backend.send_json(job)
                     payload = copy(job)
                     job_id = payload.pop("id")
