@@ -59,7 +59,7 @@ class Controller(object):
         self.frontend_port = frontend_port
         self.stop_event = event
         self.context = zmq.Context()
-        self.backend = self.context.socket(zmq.ROUTER)
+        self.backend = self.context.socket(zmq.DEALER)
         self.backend.bind("tcp://%s:%d" % (self.backend_host, self.backend_port))
 
         # Connect to Client
@@ -204,8 +204,8 @@ class Controller(object):
                 sockets = dict(self.poller.poll())
 
                 if self.backend in sockets:
-                    _, message = self.backend.recv_multipart()
-                    message = json.loads(message.decode("utf-8"))
+                    message = self.backend.recv_multipart()
+                    message = json.loads(message[0].decode("utf-8"))
                     if self.debug:
                         print("Received message from Backend %s" % message)
                     worker_id = message["worker_id"]
@@ -229,6 +229,7 @@ class Controller(object):
                         print("Sending message to worker id %s job %s" % (next_worker_id, job))
                     self.backend.send_string(next_worker_id, flags=zmq.SNDMORE)
                     self.backend.send_json(job)
+                    
                     payload = copy(job)
                     job_id = payload.pop("id")
                     self.workers[next_worker_id][job_id] = payload
@@ -244,6 +245,6 @@ class Controller(object):
 if __name__ == "__main__":
     from log_info import Logger
 
-    Controller()
+    Controller(debug=True)
 else:
     from LoadBalancer.log_info import Logger

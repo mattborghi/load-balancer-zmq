@@ -1,5 +1,4 @@
 from multiprocessing import Event
-from LoadBalancer.job import Job
 import json
 import zmq
 import time
@@ -28,12 +27,19 @@ class Worker(object):
             Worker host connection
         port: int
             Worker port connection
+        debug: bool
+            Print debug info.
 
     """
 
     def __init__(
-        self, event: Event = Event(), host: str = WORKER_HOST, port: int = WORKER_PORT
+        self,
+        event: Event = Event(),
+        host: str = WORKER_HOST,
+        port: int = WORKER_PORT,
+        debug: bool = False,
     ):
+        self.debug = debug
         self.stop_event = event
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.DEALER)
@@ -54,7 +60,7 @@ class Worker(object):
 
     def _disconnect(self):
         """Send the Controller a disconnect message close connections."""
-        self.socket.send_json({"worker_id": self.socket_id,"message": "disconnect"})
+        self.socket.send_json({"worker_id": self.socket_id, "message": "disconnect"})
         self.socket.close()
         self.context.term()
         exit()
@@ -67,14 +73,16 @@ class Worker(object):
             # Send a connect message
             self.socket.send_json({"worker_id": self.socket_id, "message": "connect"})
             while not self.stop_event.is_set():
-                result = self.socket.recv_multipart()
-                job = json.loads(result[0].decode("utf-8"))
+                _, result = self.socket.recv_multipart()
+                job = json.loads(result.decode("utf-8"))
+                if self.debug:
+                    print("Received task %s" % job)
                 value = self._do_work(job)
                 self.socket.send_json(
                     {
                         "worker_id": self.socket_id,
                         "message": "job_done",
-                        "job": Job.get_result(job, value)
+                        "job": Job.get_result(job, value),
                     }
                 )
         except KeyboardInterrupt:
@@ -86,4 +94,8 @@ class Worker(object):
 
 
 if __name__ == "__main__":
-    Worker()
+    from job import Job
+
+    Worker(debug=True)
+else:
+    from LoadBalancer.job import Job
