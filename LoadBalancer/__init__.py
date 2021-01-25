@@ -1,1 +1,1 @@
-from LoadBalancer.job import Job
+from .job import Job
