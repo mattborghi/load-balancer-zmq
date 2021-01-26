@@ -73,8 +73,7 @@ class Worker(object):
             # Send a connect message
             self.socket.send_json({"worker_id": self.socket_id, "message": "connect"})
             while not self.stop_event.is_set():
-                _, result = self.socket.recv_multipart()
-                job = json.loads(result.decode("utf-8"))
+                job = self.socket.recv_json()
                 if self.debug:
                     print("Received task %s" % job)
                 value = self._do_work(job)

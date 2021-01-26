@@ -59,7 +59,7 @@ class Controller(object):
         self.frontend_port = frontend_port
         self.stop_event = event
         self.context = zmq.Context()
-        self.backend = self.context.socket(zmq.DEALER)
+        self.backend = self.context.socket(zmq.ROUTER)
         self.backend.bind("tcp://%s:%d" % (self.backend_host, self.backend_port))
 
         # Connect to Client
@@ -105,6 +105,7 @@ class Controller(object):
         # work and try that.
         if not self.workers.items():
             return None
+        # if self.debug: print("Workers payload: ", self.workers.items())
         worker_id, work = sorted(self.workers.items(), key=lambda x: len(x[1]))[0]
         if len(work) < self.max_jobs_per_worker:
             return worker_id
@@ -205,12 +206,13 @@ class Controller(object):
                 sockets = dict(self.poller.poll())
 
                 if self.backend in sockets:
-                    message = self.backend.recv_multipart()
-                    message = json.loads(message[0].decode("utf-8"))
+                    worker_id, message = self.backend.recv_multipart()
+                    message = json.loads(message)
                     if self.debug:
                         print("Received message from Backend %s" % message)
-                    worker_id = message["worker_id"]
-                    self._handle_worker_message(worker_id, message)
+                    worker_id_msg = message["worker_id"]
+                    assert worker_id.decode("utf-8") == worker_id_msg
+                    self._handle_worker_message(worker_id.decode("utf-8"), message)
 
                 if self.frontend in sockets:
                     # TODO: Get the client_id and send it to _handle_client_message
@@ -228,15 +230,16 @@ class Controller(object):
                     job = self._work_to_requeue.pop(0)
                     if self.debug:
                         print("Sending message to worker id %s job %s" % (next_worker_id, job))
-                    self.backend.send_string(next_worker_id, flags=zmq.SNDMORE)
-                    self.backend.send_json(job)
-                    
+                    self.backend.send_multipart([next_worker_id.encode("utf-8"), json.dumps(job).encode("utf-8")])
+                                        
                     payload = copy(job)
                     job_id = payload.pop("id")
                     self.workers[next_worker_id][job_id] = payload
+                    
         except KeyboardInterrupt:
             if self.debug: print("\n\nKeyboard Interrupt fired.")
         except Exception as e:
+            print("\n\nException encountered\n")
             print(e)
         finally:
             self._before_finishing()

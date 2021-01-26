@@ -68,7 +68,7 @@ class Sink(object):
 
 if __name__ == "__main__":
     try:
-        sink = Sink()
+        Sink()
     except KeyboardInterrupt:
         # sink.stop_event.set()
         exit()

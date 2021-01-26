@@ -24,10 +24,7 @@ class Logger(object):
             print("RUN TASKS")
             print("{:8} {:15}".format("Job ID", "Result"))
             for job_id, result in self.run_jobs.items():
-                if result:
-                    print("{:8} {:15}".format(job_id, result))
-                else:
-                    print("{:8} {:15}".format(job_id, "None"))
+                print("{:8} {:15}".format(job_id, result))
         else:
             print("No jobs processed")
 
