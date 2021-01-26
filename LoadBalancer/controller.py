@@ -211,8 +211,9 @@ class Controller(object):
                     if self.debug:
                         print("Received message from Backend %s" % message)
                     worker_id_msg = message["worker_id"]
-                    assert worker_id.decode("utf-8") == worker_id_msg
-                    self._handle_worker_message(worker_id.decode("utf-8"), message)
+                    # print(worker_id.decode("utf-8"))
+                    # assert worker_id == worker_id_msg.encode("utf-8")
+                    self._handle_worker_message(worker_id, message)
 
                 if self.frontend in sockets:
                     # TODO: Get the client_id and send it to _handle_client_message
@@ -230,12 +231,14 @@ class Controller(object):
                     job = self._work_to_requeue.pop(0)
                     if self.debug:
                         print("Sending message to worker id %s job %s" % (next_worker_id, job))
-                    self.backend.send_multipart([next_worker_id.encode("utf-8"), json.dumps(job).encode("utf-8")])
+                    self.backend.send_multipart([next_worker_id, json.dumps(job).encode("utf-8")])
+                    # self.backend.send_string(next_worker_id, flags=zmq.SNDMORE)
+                    # self.backend.send_json(job)
                                         
                     payload = copy(job)
                     job_id = payload.pop("id")
                     self.workers[next_worker_id][job_id] = payload
-                    
+
         except KeyboardInterrupt:
             if self.debug: print("\n\nKeyboard Interrupt fired.")
         except Exception as e:

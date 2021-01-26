@@ -24,7 +24,10 @@ class Logger(object):
             print("RUN TASKS")
             print("{:8} {:15}".format("Job ID", "Result"))
             for job_id, result in self.run_jobs.items():
-                print("{:8} {:15}".format(job_id, result))
+                if result:
+                    print("{:8} {:15}".format(job_id, result))
+                else:
+                    print("{:8} {:}".format(job_id, result))
         else:
             print("No jobs processed")
 
@@ -51,6 +54,6 @@ class Logger(object):
             print("RUN TASKS PER WORKER")
             print("{:8} {:15} {:10}".format("Key", "Worker", "# Tasks"))
             for count, (k, v) in enumerate(self.results.items(), 1):
-                print("{:8} {:15} {:10}".format(count, k, v))
+                print("{:8} {:} {:10}".format(count, k, v))
         else:
             print("No tasks completed")
