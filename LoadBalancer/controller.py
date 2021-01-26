@@ -235,7 +235,7 @@ class Controller(object):
                     job_id = payload.pop("id")
                     self.workers[next_worker_id][job_id] = payload
         except KeyboardInterrupt:
-            pass
+            if self.debug: print("\n\nKeyboard Interrupt fired.")
         except Exception as e:
             print(e)
         finally:
