@@ -8,22 +8,30 @@ The Proxy must distribute the tasks evenly between workers and in case of worker
 
 # Install
 
-```sh
+```properties
 pipenv install git+https://github.com/mattborghi/load-balancer-zmq/#egg=LoadBalancer
 ```
+
+or 
+
+```properties
+pipenv update
+```
+
+if the package is already present on the `Pipenv` file.
 
 # Local development instructions
 
 Set working environment
 
-```sh
+```properties
 pipenv install
 pipenv shell
 ```
 
 ## A. Together
 
-```sh
+```properties
 python main.py
 ```
 
@@ -31,18 +39,24 @@ python main.py
 
 Run controller
 
-```sh
+```properties
 python LoadBalancer/controller.py
 ```
 
 Run this line for each worker you want to spawn in a separater terminal
 
-```sh
+```properties
 python LoadBalancer/worker.py
+```
+
+Run Sink
+
+```properties
+python LoadBalancer/sink.py
 ```
 
 # Generate release files with name based on setup.py
 
-```sh
+```properties
 python setup.py sdist bdist_wheel
 ```
