@@ -1,3 +1,14 @@
+import logging
+import sys
+import os
+
+PACKAGE_PARENT = '..'
+SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
+PACKAGE_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT))
+logging.info("Adding %s to the sys path in order to load the package.\n\n" % PACKAGE_DIR)
+sys.path.append(PACKAGE_DIR)
+
+
 from multiprocessing import Process, Event
 from LoadBalancer.client import Client, Workload
 from LoadBalancer.worker import Worker
