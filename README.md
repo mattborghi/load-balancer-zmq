@@ -2,9 +2,11 @@
 
 Implementation of a general load balancing pattern.
 
-We will one Client generating tasks connected to a Broker Proxy which distributes the work across workers. After each worker finish their job they send the results to a Sink. This Sink returns the results back to the Client.
+This pattern has one Client generating tasks connected to a Broker Proxy which distributes the work across workers. After each worker finish their job they send the results to a Sink. This Sink returns these results back to the Client.
 
-The Proxy must distribute the tasks evenly between workers and in case of worker failure its remaining tasks will be sent to other workers.
+The Proxy must distribute the tasks evenly between workers and in case of worker failure their remaining tasks will be sent to other workers.
+
+There is also a [Binary Star](https://zguide.zeromq.org/docs/chapter4/#High-Availability-Pair-Binary-Star-Pattern) pattern that allows us to always have an available Proxy.
 
 # Install
 
